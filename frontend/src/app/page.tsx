@@ -71,7 +71,8 @@ export default function HomePage() {
     let rawValue: string | undefined;
 
     // 1. Try native BarcodeDetector (Chrome/Edge desktop + Android Chrome)
-    const BarcodeDetectorCtor = (window as Window & { BarcodeDetector?: unknown } & { BarcodeDetector: new (opts: object) => { detect: (src: ImageBitmapSource) => Promise<{ rawValue: string }[]> } }).BarcodeDetector;
+    type BarcodeDetectorWindow = Window & { BarcodeDetector?: new (opts: object) => { detect: (src: ImageBitmapSource) => Promise<{ rawValue: string }[]> } };
+    const BarcodeDetectorCtor = (window as unknown as BarcodeDetectorWindow).BarcodeDetector;
     if (BarcodeDetectorCtor) {
       try {
         const detector = new BarcodeDetectorCtor({ formats: ["qr_code"] });
