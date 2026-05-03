@@ -308,9 +308,18 @@ def upload_media(
 
 
 @router.post("/certificates/{certificate_id}/qr")
-def generate_certificate_qr(certificate_id: str, _token: str = Depends(require_admin)):
+def generate_certificate_qr(
+    certificate_id: str,
+    base_url: str | None = Query(default=None),
+    _token: str = Depends(require_admin),
+):
     if qrcode is None:
-        raise HTTPException(status_code=500, detail="QR dependency missing")
+        raise HTTPException(status_code=500, detail="qrcode package not installed on server")
+
+    try:
+        from PIL import Image as _PilImage  # noqa: F401
+    except ImportError:
+        raise HTTPException(status_code=500, detail="Pillow image library not installed on server")
 
     sb = get_supabase()
     cert_resp = (
@@ -323,7 +332,10 @@ def generate_certificate_qr(certificate_id: str, _token: str = Depends(require_a
     if not cert_resp.data:
         raise HTTPException(status_code=404, detail="Certificate not found")
 
-    verification_url = f"{settings.public_app_base_url.rstrip('/')}/info/{certificate_id}"
+    # Frontend passes its own origin so the QR URL always points to the right host.
+    # Fall back to the configured PUBLIC_APP_BASE_URL if not provided.
+    app_base = (base_url or settings.public_app_base_url).rstrip("/")
+    verification_url = f"{app_base}/info/{certificate_id}"
     image = qrcode.make(verification_url)
     output = io.BytesIO()
     image.save(output, format="PNG")
