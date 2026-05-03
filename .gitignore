@@ -9,5 +9,4 @@ __pycache__
 .env
 .env.local
 .claude
-.cursor
 CLAUDE.md
