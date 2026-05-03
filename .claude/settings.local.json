@@ -7,7 +7,8 @@
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\subod\\\\OneDrive\\\\Desktop\\\\WORK\\\\Website\\\\CertiTrust\" -Recurse -ErrorAction SilentlyContinue)",
       "Bash(Select-Object -First 50)",
       "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\subod\\\\OneDrive\\\\Desktop\\\\WORK\\\\Website\\\\CertiTrust\\\\frontend\" -Exclude node_modules -Recurse -Force | Where-Object { $_.FullName -notmatch 'node_modules' } | Select-Object FullName | Sort-Object FullName)",
-      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\subod\\\\OneDrive\\\\Desktop\\\\WORK\\\\Website\\\\CertiTrust\\\\frontend\\\\src\" -Recurse -File | Where-Object { $_.Extension -match '\\\\.\\(tsx|ts|jsx|js\\)$' } | Select-Object FullName)"
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\subod\\\\OneDrive\\\\Desktop\\\\WORK\\\\Website\\\\CertiTrust\\\\frontend\\\\src\" -Recurse -File | Where-Object { $_.Extension -match '\\\\.\\(tsx|ts|jsx|js\\)$' } | Select-Object FullName)",
+      "WebSearch"
     ]
   }
 }

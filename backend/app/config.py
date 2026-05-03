@@ -5,8 +5,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
     supabase_url: str
-    supabase_key: str
-    supabase_jwt_secret: str = ""
+    supabase_secret_key: str  # Supabase Secret key (sb_secret_xxx) — replaces legacy service_role key
     cors_origins: str = "http://localhost:3000"
     rate_limit_per_minute: int = 60
     public_app_base_url: str = "http://localhost:3000"
