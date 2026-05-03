@@ -39,10 +39,14 @@
   --color-navy-medium: #1e293b;
   --color-navy-light: #334155;
   
+  /* Legacy shorthand vars (referenced by existing pages) */
+  --border-soft: #e4e4e7;
+  --blue-primary: #2563eb;
+
   /* Typography */
-  --font-display: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  --font-mono: 'SF Mono', 'Consolas', 'Monaco', monospace;
+  --font-display: var(--font-outfit), system-ui, sans-serif;
+  --font-body: var(--font-outfit), system-ui, sans-serif;
+  --font-mono: var(--font-code), 'JetBrains Mono', monospace;
   
   /* Font Sizes */
   --text-xs: 0.75rem;      /* 12px */

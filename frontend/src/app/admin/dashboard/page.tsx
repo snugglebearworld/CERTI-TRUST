@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { QrCode } from "lucide-react";
+import { Plus, QrCode, RefreshCw, Search } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { adminApi } from "@/lib/admin-api";
 import type { CertificateListItem } from "@/lib/types";
@@ -24,7 +24,11 @@ export default function AdminDashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await adminApi.listCertificates({ q: search, limit: pageSize, offset: page * pageSize });
+      const data = await adminApi.listCertificates({
+        q: search,
+        limit: pageSize,
+        offset: page * pageSize,
+      });
       setRecords(data.items ?? []);
       setTotal(data.total ?? 0);
     } catch (e) {
@@ -40,105 +44,178 @@ export default function AdminDashboardPage() {
   }, [search, page]);
 
   return (
-    <main className="mx-auto max-w-6xl p-6">
-      <div className="mb-4 flex items-center justify-between rounded-2xl border border-[var(--border-soft)] bg-white p-4">
+    <main className="mx-auto max-w-7xl p-5 sm:p-6">
+      {/* Page header */}
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Certificates</h1>
-          <p className="text-sm text-slate-600">All student certificate records from Supabase.</p>
+          <h1 className="text-[22px] font-bold leading-tight text-zinc-900">Certificates</h1>
+          <p className="mt-0.5 text-[13px] text-zinc-500">
+            {loading ? "Loading..." : `${total} records in database`}
+          </p>
         </div>
         <Link
           href="/admin/certificates/new"
-          className="rounded-lg bg-[var(--color-brand-primary)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+          className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl bg-blue-600 px-4 text-[13px] font-semibold text-white shadow-sm transition hover:bg-blue-700"
         >
-          + New Certificate
+          <Plus className="h-4 w-4" />
+          New Certificate
         </Link>
       </div>
-      <section className="rounded-2xl border border-[var(--border-soft)] bg-white p-4">
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          <input
-            className="h-10 flex-1 rounded-lg border border-[var(--border-soft)] px-3"
-            placeholder="Search certificate id, name, course"
-            value={search}
-            onChange={(event) => {
-              setPage(0);
-              setSearch(event.target.value);
-            }}
-          />
-          <button className="rounded-lg border border-[var(--border-soft)] px-3 py-2 text-sm" onClick={loadCertificates}>
-            Refresh
+
+      {/* Table card */}
+      <div className="overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-[0_1px_4px_rgba(0,0,0,0.04),0_1px_2px_rgba(0,0,0,0.02)]">
+        {/* Toolbar */}
+        <div className="flex flex-wrap items-center gap-2 border-b border-zinc-100 px-4 py-3">
+          <div className="relative flex-1" style={{ minWidth: "180px" }}>
+            <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400" />
+            <input
+              className="h-9 w-full rounded-lg border border-zinc-200 bg-zinc-50 pl-9 pr-3 text-[13px] placeholder:text-zinc-400 transition focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/[0.08]"
+              placeholder="Search ID, name, or course…"
+              value={search}
+              onChange={(e) => {
+                setPage(0);
+                setSearch(e.target.value);
+              }}
+            />
+          </div>
+          <button
+            onClick={loadCertificates}
+            className="flex h-9 items-center gap-1.5 rounded-lg border border-zinc-200 px-3 text-[13px] text-zinc-600 transition hover:bg-zinc-50"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Refresh</span>
           </button>
         </div>
+
+        {/* Error */}
         {error && (
-          <div className="mb-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <div className="mx-4 my-3 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-[12.5px] text-red-600">
             {error}
           </div>
         )}
+
+        {/* Table */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
+          <table className="w-full text-left">
             <thead>
-              <tr className="bg-slate-50">
-                <th className="p-2">Certificate ID</th>
-                <th className="p-2">Name</th>
-                <th className="p-2">Course</th>
-                <th className="p-2">Institution</th>
-                <th className="p-2">Partner</th>
-                <th className="p-2">Issue Date</th>
-                <th className="p-2">Status</th>
-                <th className="p-2">QR</th>
+              <tr className="border-b border-zinc-100 bg-zinc-50/80">
+                <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-zinc-400">
+                  Certificate ID
+                </th>
+                <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-zinc-400">
+                  Student
+                </th>
+                <th className="hidden px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-zinc-400 sm:table-cell">
+                  Course
+                </th>
+                <th className="hidden px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-zinc-400 md:table-cell">
+                  Institution
+                </th>
+                <th className="hidden px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-zinc-400 lg:table-cell">
+                  Issue Date
+                </th>
+                <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-zinc-400">
+                  Status
+                </th>
+                <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-zinc-400">
+                  QR
+                </th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-zinc-50">
               {records.map((item) => (
-                <tr key={item.certificate_id} className="border-t border-[var(--border-soft)]">
-                  <td className="p-2 font-mono text-xs">
-                    <Link href={`/admin/certificates/${item.certificate_id}`} className="text-[var(--color-brand-primary)] hover:underline">
+                <tr key={item.certificate_id} className="transition-colors hover:bg-zinc-50/70">
+                  <td className="px-4 py-3">
+                    <Link
+                      href={`/admin/certificates/${item.certificate_id}`}
+                      className="font-mono text-[12px] font-medium text-blue-600 transition hover:text-blue-700 hover:underline"
+                    >
                       {item.certificate_id}
                     </Link>
                   </td>
-                  <td className="p-2">{item.full_name}</td>
-                  <td className="p-2">{item.course || "-"}</td>
-                  <td className="p-2">{item.institution || "-"}</td>
-                  <td className="p-2">{item.partner || "-"}</td>
-                  <td className="p-2">{item.issue_date || "-"}</td>
-                  <td className="p-2">{item.status}</td>
-                  <td className="p-2">
+                  <td className="px-4 py-3 text-[13px] font-medium text-zinc-900">
+                    {item.full_name}
+                  </td>
+                  <td className="hidden px-4 py-3 text-[13px] text-zinc-500 sm:table-cell">
+                    {item.course || <span className="text-zinc-300">—</span>}
+                  </td>
+                  <td className="hidden px-4 py-3 text-[13px] text-zinc-500 md:table-cell">
+                    {item.institution || <span className="text-zinc-300">—</span>}
+                  </td>
+                  <td className="hidden px-4 py-3 text-[13px] text-zinc-500 lg:table-cell">
+                    {item.issue_date || <span className="text-zinc-300">—</span>}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                        item.status === "valid"
+                          ? "border border-emerald-100 bg-emerald-50 text-emerald-700"
+                          : "border border-red-100 bg-red-50 text-red-600"
+                      }`}
+                    >
+                      {item.status === "valid" ? "Valid" : "Invalid"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
                     {item.certificate_qr_path ? (
                       <a
                         href={qrPublicUrl(item.certificate_qr_path)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-xs font-medium text-[var(--color-brand-primary)] hover:underline"
                         title="View / download QR code"
+                        className="flex h-7 w-7 items-center justify-center rounded-lg text-zinc-400 transition hover:bg-zinc-100 hover:text-blue-600"
                       >
-                        <QrCode className="h-3.5 w-3.5" />
-                        Download
+                        <QrCode className="h-4 w-4" />
                       </a>
                     ) : (
-                      <span className="text-xs text-slate-300">—</span>
+                      <span className="text-zinc-200">—</span>
                     )}
                   </td>
                 </tr>
               ))}
               {!loading && records.length === 0 && (
                 <tr>
-                  <td className="p-3 text-sm text-slate-500" colSpan={8}>
-                    No certificates found.
+                  <td colSpan={7} className="px-4 py-14 text-center text-[13px] text-zinc-400">
+                    No certificates found.{" "}
+                    <Link href="/admin/certificates/new" className="text-blue-600 hover:underline">
+                      Add the first one.
+                    </Link>
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
-        {loading && <p className="mt-3 text-sm text-slate-500">Loading records...</p>}
-        <div className="mt-3 flex items-center justify-between gap-2">
-          <span className="text-xs text-slate-500">Total: {total}</span>
+
+        {/* Loading spinner */}
+        {loading && (
+          <div className="flex justify-center py-10">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-zinc-200 border-t-blue-600" />
+          </div>
+        )}
+
+        {/* Pagination */}
+        <div className="flex items-center justify-between border-t border-zinc-100 px-4 py-3">
+          <span className="text-[12px] text-zinc-400">{total} total</span>
           <div className="flex items-center gap-2">
-            <button className="rounded border border-[var(--border-soft)] px-3 py-1 text-sm disabled:opacity-50" disabled={page === 0} onClick={() => setPage((p) => Math.max(0, p - 1))}>Prev</button>
-            <span className="text-xs text-slate-500">Page {page + 1}</span>
-            <button className="rounded border border-[var(--border-soft)] px-3 py-1 text-sm disabled:opacity-50" disabled={(page + 1) * pageSize >= total} onClick={() => setPage((p) => p + 1)}>Next</button>
+            <button
+              disabled={page === 0}
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              className="flex h-8 items-center rounded-lg border border-zinc-200 px-3 text-[12px] text-zinc-600 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Previous
+            </button>
+            <span className="px-1 text-[12px] text-zinc-400">Page {page + 1}</span>
+            <button
+              disabled={(page + 1) * pageSize >= total}
+              onClick={() => setPage((p) => p + 1)}
+              className="flex h-8 items-center rounded-lg border border-zinc-200 px-3 text-[12px] text-zinc-600 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Next
+            </button>
           </div>
         </div>
-      </section>
+      </div>
     </main>
   );
 }

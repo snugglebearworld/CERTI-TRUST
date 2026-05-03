@@ -21,34 +21,88 @@ export default function HomePage() {
     }, 300);
   };
 
+  const extractCertId = (rawValue: string): string | null => {
+    // Handle full URLs like https://example.com/info/CERT-123
+    try {
+      const parsed = new URL(rawValue);
+      const parts = parsed.pathname.split("/").filter(Boolean);
+      const idx = parts.indexOf("info");
+      if (idx !== -1 && parts[idx + 1]) return parts[idx + 1];
+      // fallback: last path segment
+      const last = parts[parts.length - 1];
+      if (last) return last;
+    } catch {
+      // Not a URL — treat the raw value as the certificate ID directly
+      const trimmed = rawValue.trim();
+      if (trimmed) return trimmed;
+    }
+    return null;
+  };
+
+  const decodeQrFromFile = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) { URL.revokeObjectURL(url); reject(new Error("canvas")); return; }
+        ctx.drawImage(img, 0, 0);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(url);
+        import("jsqr").then(({ default: jsQR }) => {
+          const result = jsQR(imageData.data, imageData.width, imageData.height);
+          if (result?.data) resolve(result.data);
+          else reject(new Error("no_qr"));
+        }).catch(reject);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("load")); };
+      img.src = url;
+    });
+
   const handleQrScan = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    // Reset input so the same file can be selected again
     const file = event.target.files?.[0];
+    event.target.value = "";
     if (!file) return;
 
-    try {
-      const BarcodeDetectorCtor = (window as Window & { BarcodeDetector?: any }).BarcodeDetector;
-      if (!BarcodeDetectorCtor) {
-        alert("QR scanning is not supported in this browser.");
+    let rawValue: string | undefined;
+
+    // 1. Try native BarcodeDetector (Chrome/Edge desktop + Android Chrome)
+    const BarcodeDetectorCtor = (window as Window & { BarcodeDetector?: unknown } & { BarcodeDetector: new (opts: object) => { detect: (src: ImageBitmapSource) => Promise<{ rawValue: string }[]> } }).BarcodeDetector;
+    if (BarcodeDetectorCtor) {
+      try {
+        const detector = new BarcodeDetectorCtor({ formats: ["qr_code"] });
+        const bitmap = await createImageBitmap(file);
+        const results = await detector.detect(bitmap);
+        rawValue = results?.[0]?.rawValue;
+      } catch {
+        // fall through to jsQR
+      }
+    }
+
+    // 2. Fall back to jsQR (works in all browsers including Safari & Firefox)
+    if (!rawValue) {
+      try {
+        rawValue = await decodeQrFromFile(file);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "";
+        if (msg === "no_qr") {
+          alert("No QR code detected in this image. Make sure the QR code is clearly visible.");
+        } else {
+          alert("Could not read this image. Please try a clearer photo.");
+        }
         return;
       }
-      const detector = new BarcodeDetectorCtor({ formats: ["qr_code"] });
-      const bitmap = await createImageBitmap(file);
-      const results = await detector.detect(bitmap);
-      const text = results?.[0]?.rawValue;
-      if (!text) {
-        alert("No QR code detected in this image.");
-        return;
-      }
-      const parsed = new URL(text);
-      const parts = parsed.pathname.split("/").filter(Boolean);
-      const certId = parts[parts.length - 1];
-      if (certId) {
-        router.push(`/info/${encodeURIComponent(certId)}`);
-        return;
-      }
+    }
+
+    const certId = extractCertId(rawValue);
+    if (certId) {
+      router.push(`/info/${encodeURIComponent(certId)}`);
+    } else {
       alert("QR code does not contain a valid certificate link.");
-    } catch {
-      alert("Could not read this QR code image.");
     }
   };
 
@@ -170,7 +224,6 @@ export default function HomePage() {
                     ref={fileInputRef}
                     type="file"
                     accept="image/*"
-                    capture="environment"
                     onChange={handleQrScan}
                     className="hidden"
                   />
