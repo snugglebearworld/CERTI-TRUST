@@ -104,8 +104,10 @@ export const adminApi = {
     });
   },
   generateCertificateQr(certificateId: string) {
+    const base = typeof window !== "undefined" ? window.location.origin : "";
+    const qs = base ? `?base_url=${encodeURIComponent(base)}` : "";
     return requestJson<{ certificate_id: string; certificate_qr_path: string; verification_url: string }>(
-      `/api/admin/certificates/${certificateId}/qr`,
+      `/api/admin/certificates/${certificateId}/qr${qs}`,
       { method: "POST" }
     );
   },

@@ -8,6 +8,7 @@ export default function HomePage() {
   const router = useRouter();
   const [certificateId, setCertificateId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleVerify = async (e: React.FormEvent) => {
@@ -44,18 +45,29 @@ export default function HomePage() {
       const img = new Image();
       const url = URL.createObjectURL(file);
       img.onload = () => {
-        const canvas = document.createElement("canvas");
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) { URL.revokeObjectURL(url); reject(new Error("canvas")); return; }
-        ctx.drawImage(img, 0, 0);
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         URL.revokeObjectURL(url);
         import("jsqr").then(({ default: jsQR }) => {
-          const result = jsQR(imageData.data, imageData.width, imageData.height);
-          if (result?.data) resolve(result.data);
-          else reject(new Error("no_qr"));
+          // Phone camera photos can be 4000+ px wide. jsQR detects best at moderate
+          // resolutions, so try several downscaled sizes before giving up.
+          const sizes = [1024, 768, 512, 1600, img.naturalWidth];
+          const unique = [...new Set(sizes.filter(s => s <= img.naturalWidth))];
+          if (!unique.includes(img.naturalWidth)) unique.push(img.naturalWidth);
+
+          for (const maxDim of unique) {
+            const scale = Math.min(1, maxDim / Math.max(img.naturalWidth, img.naturalHeight));
+            const w = Math.round(img.naturalWidth * scale);
+            const h = Math.round(img.naturalHeight * scale);
+            const canvas = document.createElement("canvas");
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) continue;
+            ctx.drawImage(img, 0, 0, w, h);
+            const imageData = ctx.getImageData(0, 0, w, h);
+            const result = jsQR(imageData.data, w, h, { inversionAttempts: "attemptBoth" });
+            if (result?.data) { resolve(result.data); return; }
+          }
+          reject(new Error("no_qr"));
         }).catch(reject);
       };
       img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("load")); };
@@ -63,14 +75,14 @@ export default function HomePage() {
     });
 
   const handleQrScan = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    // Reset input so the same file can be selected again
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
 
+    setIsScanning(true);
     let rawValue: string | undefined;
 
-    // 1. Try native BarcodeDetector (Chrome/Edge desktop + Android Chrome)
+    // 1. Try native BarcodeDetector (Chrome/Edge + Android Chrome) — fastest path
     type BarcodeDetectorWindow = Window & { BarcodeDetector?: new (opts: object) => { detect: (src: ImageBitmapSource) => Promise<{ rawValue: string }[]> } };
     const BarcodeDetectorCtor = (window as unknown as BarcodeDetectorWindow).BarcodeDetector;
     if (BarcodeDetectorCtor) {
@@ -84,21 +96,23 @@ export default function HomePage() {
       }
     }
 
-    // 2. Fall back to jsQR (works in all browsers including Safari & Firefox)
+    // 2. jsQR fallback — tries multiple downscale sizes to handle large phone photos
     if (!rawValue) {
       try {
         rawValue = await decodeQrFromFile(file);
       } catch (err) {
+        setIsScanning(false);
         const msg = err instanceof Error ? err.message : "";
         if (msg === "no_qr") {
-          alert("No QR code detected in this image. Make sure the QR code is clearly visible.");
+          alert("No QR code detected. Try holding the camera steadier and make sure the full QR code is in frame.");
         } else {
-          alert("Could not read this image. Please try a clearer photo.");
+          alert("Could not read this image. Please try again.");
         }
         return;
       }
     }
 
+    setIsScanning(false);
     const certId = extractCertId(rawValue);
     if (certId) {
       router.push(`/info/${encodeURIComponent(certId)}`);
@@ -215,10 +229,20 @@ export default function HomePage() {
 
                   <button
                     onClick={handleScanQrCode}
-                    className="w-full bg-white/10 border-2 border-white/30 hover:border-white/50 hover:bg-white/20 text-white font-bold py-4 px-6 rounded-xl shadow-md hover:shadow-lg backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-3"
+                    disabled={isScanning}
+                    className="w-full bg-white/10 border-2 border-white/30 hover:border-white/50 hover:bg-white/20 text-white font-bold py-4 px-6 rounded-xl shadow-md hover:shadow-lg backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-70 disabled:cursor-wait flex items-center justify-center gap-3"
                   >
-                    <QrCode className="w-6 h-6" strokeWidth={2.5} />
-                    Scan QR Code
+                    {isScanning ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Reading QR…
+                      </>
+                    ) : (
+                      <>
+                        <QrCode className="w-6 h-6" strokeWidth={2.5} />
+                        Scan QR Code
+                      </>
+                    )}
                   </button>
 
                   <input

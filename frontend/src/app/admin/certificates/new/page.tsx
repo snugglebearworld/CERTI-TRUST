@@ -125,7 +125,11 @@ export default function NewCertificatePage() {
               const data = await res.json().catch(() => ({}));
               throw new Error((data?.detail as string) ?? `Save failed (${res.status})`);
             }
-            await adminApi.generateCertificateQr(form.certificate_id).catch(() => null);
+            try {
+              await adminApi.generateCertificateQr(form.certificate_id);
+            } catch {
+              // QR failure is non-fatal — navigate and let the admin regenerate from the edit page
+            }
             router.push("/admin/dashboard");
           } catch (e) {
             setError(e instanceof Error ? e.message : "Failed to save certificate");
