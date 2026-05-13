@@ -6,7 +6,7 @@ export async function fetchCertificate(
   certificateId: string
 ): Promise<CertificateRecord | null> {
   const response = await fetch(
-    `${API_BASE}/api/info/${encodeURIComponent(certificateId)}`,
+    `${API_BASE}/api/info/${encodeURIComponent(certificateId.toUpperCase())}`,
     { cache: "no-store" }
   );
   if (!response.ok) {
@@ -17,7 +17,7 @@ export async function fetchCertificate(
 
 export async function verifyCertificate(certificateId: string): Promise<boolean> {
   const response = await fetch(
-    `${API_BASE}/api/verify/${encodeURIComponent(certificateId)}`,
+    `${API_BASE}/api/verify/${encodeURIComponent(certificateId.toUpperCase())}`,
     { cache: "no-store" }
   );
   if (!response.ok) {

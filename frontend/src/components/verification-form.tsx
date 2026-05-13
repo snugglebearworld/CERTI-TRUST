@@ -13,7 +13,7 @@ export function VerificationForm() {
       onSubmit={(event) => {
         event.preventDefault();
         if (!certificateId.trim()) return;
-        router.push(`/info/${encodeURIComponent(certificateId.trim())}`);
+        router.push(`/info/${encodeURIComponent(certificateId.trim().toUpperCase())}`);
       }}
       className="mx-auto flex w-full max-w-[620px] items-center gap-2 rounded-2xl border border-[var(--border-soft)] bg-white p-2 shadow-[var(--shadow-soft)]"
     >

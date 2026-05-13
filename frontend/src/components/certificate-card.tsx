@@ -78,7 +78,7 @@ export function CertificateCard({ record }: CertificateCardProps) {
             <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8 md:gap-12">
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-8 text-center sm:text-left flex-1">
                 <div className="relative">
-                  <div className="relative h-32 w-32 sm:h-40 sm:w-40 rounded-[2rem] overflow-hidden border-[5px] border-slate-200 shadow-2xl bg-slate-50 flex-shrink-0">
+                  <div className="relative h-32 w-32 sm:h-40 sm:w-40 rounded-[2rem] overflow-hidden border-[5px] border-slate-200 shadow-2xl bg-white flex-shrink-0">
                     {certificate.image_url ? (
                       <Image
                         src={certificate.image_url}
@@ -319,6 +319,15 @@ export function CertificateCard({ record }: CertificateCardProps) {
                       </div>
                     </div>
                   )}
+                </div>
+
+                <div className="mt-6 pt-6 border-t border-slate-700/50 relative z-10">
+                  <p className="text-base text-center font-bold text-slate-400 uppercase tracking-widest mb-1">
+                    Issue Date
+                  </p>
+                  <p className="text-l text-center font-bold text-white">
+                    {formatDate(certificate.issue_date)}
+                  </p>
                 </div>
               </section>
 
